@@ -1,7 +1,7 @@
 {
   "name": "식물관리",
   "short_name": "식물",
-  "start_url": "index.html",
+  "start_url": "/plant-app/index.html"
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50"
