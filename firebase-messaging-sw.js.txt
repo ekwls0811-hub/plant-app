@@ -1,0 +1,18 @@
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "AIzaSyAwnmV_8lt3aZawvDxXDUNnpftJCc4uz0o",
+  authDomain: "plant-app-513f4.firebaseapp.com",
+  projectId: "plant-app-513f4",
+  messagingSenderId: "966110748803",
+  appId: "1:966110748803:web:ddc825ff986c3b0e003bb6"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage(payload => {
+  self.registration.showNotification(payload.notification.title, {
+    body: payload.notification.body
+  });
+});

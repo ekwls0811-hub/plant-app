@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>식물관리</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+  font-family: sans-serif;
+  background: #eef5f1;
+  text-align: center;
+  padding: 20px;
+}
+.container {
+  max-width: 400px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+select, input {
+  width: 90%;
+  padding: 12px;
+  margin: 10px;
+  border-radius: 10px;
+}
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+.result {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+}
+.green { background:#d4edda; }
+.yellow { background:#fff3cd; }
+.red { background:#f8d7da; }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>🌿 식물관리</h2>
+
+  <select id="plant">
+    <option value="lavender">라벤더</option>
+    <option value="campanula">캄파눌라</option>
+    <option value="exacum">엑사쿰</option>
+  </select>
+
+  <input type="number" id="moisture" placeholder="수분측정기 (1~10)">
+  <input type="date" id="lastWater">
+
+  <button onclick="checkPlant()">판단하기</button>
+  <button onclick="requestNotification()">알림 설정</button>
+
+  <div id="result" class="result"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"></script>
+<script src="firebase.js"></script>
+
+<script>
+
+// 🔔 앱 실행 시 자동 체크
+window.onload = function() {
+  let plants = ["lavender", "campanula", "exacum"];
+
+  plants.forEach(p => {
+    let last = localStorage.getItem(p);
+    if (last) {
+      let days = daysBetween(last);
+
+      if (p==="lavender" && days>=6)
+        alert("🌿 라벤더 물 줄 때!");
+      if (p==="campanula" && days>=3)
+        alert("🌼 캄파눌라 체크!");
+      if (p==="exacum" && days>=2)
+        alert("🌸 엑사쿰 물!");
+    }
+  });
+};
+
+// 🔔 알림 권한 요청
+function requestNotification() {
+  Notification.requestPermission().then(permission => {
+    if (permission === "granted") {
+      alert("알림 허용됨!");
+      scheduleNotification();
+    } else {
+      alert("알림 거부됨");
+    }
+  });
+}
+
+// 🔔 6시간마다 알림
+function scheduleNotification() {
+  setInterval(() => {
+    new Notification("🌿 식물 체크 시간", {
+      body: "오늘 물줘야 하는지 확인해!"
+    });
+  }, 1000 * 60 * 60 * 6);
+}
+
+// 📅 날짜 계산
+function daysBetween(date) {
+  const now = new Date();
+  const past = new Date(date);
+  return Math.floor((now - past) / (1000*60*60*24));
+}
+
+// 🌿 핵심 로직 (완성본)
+function checkPlant() {
+
+  const plant = document.getElementById("plant").value;
+
+  // 🔥 수정된 부분 (오류 방지)
+  const moisture = parseInt(document.getElementById("moisture").value) || 0;
+
+  const lastWater = document.getElementById("lastWater").value;
+
+  let decision="", action="", reason="", color="green";
+  let days = lastWater ? daysBetween(lastWater) : null;
+
+  if (plant==="lavender") {
+    if (moisture<=2) { decision="물 필요"; action="지금 물 줘"; reason="완전 건조"; }
+    else { decision="금지"; action="그대로 둬"; reason="과습 위험"; color="red"; }
+  }
+
+  if (plant==="campanula") {
+    if (moisture<=2){ decision="물 필요"; action="지금 물"; reason="건조"; }
+    else if (moisture==3){ decision="보류"; action="오늘/내일 물"; reason="건조 직전"; color="yellow";}
+    else { decision="정상"; action="유지"; reason="적정 수분"; }
+  }
+
+  if (plant==="exacum") {
+    if (moisture<=3){ decision="물 필요"; action="지금 물"; reason="촉촉 유지"; }
+    else if (moisture==4){ decision="정상"; action="유지"; reason="좋음"; }
+    else { decision="주의"; action="물 금지"; reason="과습 위험"; color="red"; }
+  }
+
+  if (days!==null) reason += " / "+days+"일 경과";
+
+  // 🔥 추가된 저장 기능
+  if (lastWater) {
+    localStorage.setItem(plant, lastWater);
+  }
+
+  document.getElementById("result").innerHTML =
+  `<h3>${decision}</h3>
+   <p>${action}</p>
+   <p>${reason}</p>`;
+
+  document.getElementById("result").className="result "+color;
+}
+
+// 서비스워커 등록
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+
+</script>
+</body>
+</html>
