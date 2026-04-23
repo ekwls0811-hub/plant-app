@@ -3,7 +3,7 @@ self.addEventListener("install", e => {
     caches.open("plant-app").then(cache => {
       return cache.addAll([
         "/plant-app/",
-        "/plant-app/index.html"
+        "/plant-app/index.html",
       ]);
     })
   );
